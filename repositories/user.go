@@ -5,51 +5,36 @@ import (
 	"go-bank/structs"
 )
 
-func GetUsers(db *sql.DB) (users []structs.User, err error) {
-	sql := "SELECT * FROM users"
+func InsertUser(db *sql.DB, user structs.User) (structs.UserResponse, error) {
+	sql := "INSERT INTO users (username, password_hash) VALUES ($1, $2) RETURNING user_id, username, created_at, updated_at"
 
-	rows, err := db.Query(sql)
+	var userResponse structs.UserResponse
+	err := db.QueryRow(sql, user.Username, user.Password).Scan(&userResponse.ID, &userResponse.Username, &userResponse.CreatedAt, &userResponse.UpdatedAt)
 
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var user = structs.User{}
-
-		err = rows.Scan(&user.ID, &user.Username, &user.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, user)
-	}
-
-	return
+	return userResponse, err
 }
 
-func InsertUser(db *sql.DB, user structs.User) (structs.User, error) {
-	sql := "INSERT INTO users (username, password_hash, created_at) VALUES ($1, $2, NOW()) RETURNING *"
+func GetUserByUsername(db *sql.DB, loginInfo structs.LoginInfo) (structs.User, error) {
+	sql := "SELECT user_id, username, password_hash, created_at, updated_at FROM users WHERE username=$1"
 
-	err := db.QueryRow(sql, user.Username, user.Password).Scan(&user.ID, &user.Username, &user.CreatedAt)
+	var user structs.User
+	err := db.QueryRow(sql, loginInfo.Username).Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	return user, err
 }
 
-func UpdateUser(db *sql.DB, user structs.User) (structs.User, error) {
-	sql := "UPDATE users SET usernam=$1WHERE id=$2 RETURNING *"
+func UpdatePassword(db *sql.DB, changePasswordInfo structs.ChangePasswordInfo) error {
+	sql := "UPDATE users SET password_hash=$1 WHERE username=$2"
 
-	err := db.QueryRow(sql, user.Username, user.ID).Scan(&user.ID, &user.Username, &user.CreatedAt)
+	err := db.QueryRow(sql, changePasswordInfo.NewPassword, changePasswordInfo.Username)
 
-	return user, err
+	return err.Err()
 }
 
-func DeleteUser(db *sql.DB, user structs.User) error {
-	sql := "DELETE FROM users WHERE id=$1"
+func DeleteUser(db *sql.DB, loginInfo structs.LoginInfo) error {
+	sql := "DELETE FROM users WHERE username=$1"
 
-	err := db.QueryRow(sql, user.ID)
+	err := db.QueryRow(sql, loginInfo.Username)
 
 	return err.Err()
 }

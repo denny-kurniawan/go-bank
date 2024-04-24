@@ -1,28 +1,17 @@
 package controllers
 
 import (
-	"fmt"
 	"go-bank/database"
 	"go-bank/helpers"
 	"go-bank/repositories"
 	"go-bank/structs"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func GetUsers(ctx *gin.Context) {
-	users, err := repositories.GetUsers(database.DbConnection)
-
-	if err != nil {
-		helpers.APIResponse(ctx, http.StatusBadRequest, "Bad request", nil)
-	} else {
-		helpers.APIResponse(ctx, http.StatusOK, "Users retrieved successfully", users)
-	}
-}
-
-func CreateUser(ctx *gin.Context) {
+func Register(ctx *gin.Context) {
 	var user structs.User
 
 	err := ctx.ShouldBindJSON(&user)
@@ -31,55 +20,119 @@ func CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println(user)
-
-	user, err = repositories.InsertUser(database.DbConnection, user)
+	// Hash the password using bcrypt
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to create user", nil)
+		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to hash password", nil)
 		return
 	}
 
-	helpers.APIResponse(ctx, http.StatusOK, "User created successfully", user)
+	// Replace the plain text password with the hashed version
+	user.Password = string(hashedPassword)
+
+	var userResponse structs.UserResponse
+	userResponse, err = repositories.InsertUser(database.DbConnection, user)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusBadRequest, "Username already taken", nil)
+		return
+	}
+
+	helpers.APIResponse(ctx, http.StatusOK, "User created successfully", userResponse)
 }
 
-func UpdateUser(ctx *gin.Context) {
+func Login(ctx *gin.Context) {
+	var loginInfo structs.LoginInfo
+	var user structs.User
+	var loginResponse structs.LoginResponse
+
+	err := ctx.ShouldBindJSON(&loginInfo)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusBadRequest, "Bad request", nil)
+		return
+	}
+
+	user, err = repositories.GetUserByUsername(database.DbConnection, loginInfo)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusUnauthorized, "Invalid username or password", nil)
+		return
+	}
+
+	// Compare the stored hashed password, with the hashed version of the password that was received
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginInfo.Password)); err != nil {
+		helpers.APIResponse(ctx, http.StatusUnauthorized, "Invalid username or password", nil)
+		return
+	}
+
+	// Generate JWT token
+
+	helpers.APIResponse(ctx, http.StatusOK, "Login successful", loginResponse)
+}
+
+func ChangePassword(ctx *gin.Context) {
+	var changePasswordInfo structs.ChangePasswordInfo
+	var loginInfo structs.LoginInfo
 	var user structs.User
 
-	id, err := strconv.Atoi(ctx.Param("id"))
+	err := ctx.ShouldBindJSON(&changePasswordInfo)
 	if err != nil {
 		helpers.APIResponse(ctx, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
 
-	err = ctx.ShouldBindJSON(&user)
+	loginInfo.Username = changePasswordInfo.Username
+
+	user, err = repositories.GetUserByUsername(database.DbConnection, loginInfo)
 	if err != nil {
-		helpers.APIResponse(ctx, http.StatusBadRequest, "Bad request", nil)
+		helpers.APIResponse(ctx, http.StatusBadRequest, "Username does not exist", nil)
 		return
 	}
 
-	user.ID = uint64(id)
-
-	user, err = repositories.UpdateUser(database.DbConnection, user)
-	if err != nil {
-		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to update user", nil)
+	// Compare the stored hashed password, with the hashed version of the password that was received
+	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(changePasswordInfo.OldPassword)); err != nil {
+		helpers.APIResponse(ctx, http.StatusUnauthorized, "Invalid password", nil)
 		return
 	}
 
-	helpers.APIResponse(ctx, http.StatusOK, "User updated successfully", user)
+	// Check if the new password and confirm new password match
+	if changePasswordInfo.NewPassword != changePasswordInfo.ConfirmNewPassword {
+		helpers.APIResponse(ctx, http.StatusBadRequest, "Passwords do not match", nil)
+		return
+	}
+
+	// Hash the new password using bcrypt
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(changePasswordInfo.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to hash password", nil)
+		return
+	}
+
+	changePasswordInfo.NewPassword = string(hashedPassword)
+
+	err = repositories.UpdatePassword(database.DbConnection, changePasswordInfo)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to update password", nil)
+		return
+	}
+
+	helpers.APIResponse(ctx, http.StatusOK, "Your password has been successfully updated", nil)
 }
 
 func DeleteUser(ctx *gin.Context) {
-	var user structs.User
+	var loginInfo structs.LoginInfo
 
-	id, err := strconv.Atoi(ctx.Param("id"))
+	err := ctx.ShouldBindJSON(&loginInfo)
 	if err != nil {
 		helpers.APIResponse(ctx, http.StatusBadRequest, "Bad request", nil)
 		return
 	}
 
-	user.ID = uint64(id)
+	_, err = repositories.GetUserByUsername(database.DbConnection, loginInfo)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusBadRequest, "Username does not exist", nil)
+		return
+	}
 
-	err = repositories.DeleteUser(database.DbConnection, user)
+	err = repositories.DeleteUser(database.DbConnection, loginInfo)
 	if err != nil {
 		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to delete user", nil)
 		return

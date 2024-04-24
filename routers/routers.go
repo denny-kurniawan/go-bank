@@ -9,13 +9,12 @@ import (
 func StartServer() *gin.Engine {
 	router := gin.Default()
 
-	// users
-	router.Group("/users")
+	users := router.Group("/users")
 	{
-		router.GET("/", controllers.GetUsers)
-		router.POST("/", controllers.CreateUser)
-		router.PUT("/:id", controllers.UpdateUser)
-		router.DELETE("/:id", controllers.DeleteUser)
+		users.POST("/register", controllers.Register)
+		users.POST("/login", controllers.Login)
+		users.POST("change-password", controllers.ChangePassword)
+		users.DELETE("/", controllers.DeleteUser)
 	}
 
 	return router
