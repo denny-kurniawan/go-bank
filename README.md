@@ -12,8 +12,6 @@ Here are some of the main features:
 
 - Transaction management: Users can deposit money into an account, withdraw money from an account, and transfer money between accounts.
 
-
-
 ## Getting Started
 
 To get started with this project, clone the repository to your local machine.
@@ -305,7 +303,8 @@ Response
         "amount": "float64",
         "description": "string",
         "created_at": "string"
-      }
+      },
+      // more transactions
     ]
   },
   "message": "Account retrieved successfully"
