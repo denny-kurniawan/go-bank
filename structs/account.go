@@ -6,4 +6,10 @@ type Account struct {
 	AccountNo string  `json:"account_no"`
 	Balance   float64 `json:"balance"`
 	CreatedAt string  `json:"created_at"`
+	UpdatedAt string  `json:"updated_at"`
+}
+
+type AccountBalance struct {
+	AccountNo string  `json:"account_no"`
+	Balance   float64 `json:"balance"`
 }

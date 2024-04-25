@@ -17,5 +17,20 @@ func StartServer() *gin.Engine {
 		users.DELETE("/", controllers.DeleteUser)
 	}
 
+	accounts := router.Group("/accounts")
+	{
+		accounts.POST("/", controllers.CreateAccount)
+
+		userAccounts := accounts.Group("/:userID")
+		{
+			userAccounts.GET("/", controllers.GetAccountsByUserID)
+			userAccounts.DELETE("/", controllers.DeleteAccountsByUserID)
+
+			userAccounts.GET("/:accountNo", controllers.GetAccountByAccountNo)
+			userAccounts.DELETE("/:accountNo", controllers.DeleteAccountByAccountNo)
+		}
+
+	}
+
 	return router
 }
