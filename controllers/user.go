@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"go-bank/database"
 	"go-bank/helpers"
 	"go-bank/repositories"
@@ -151,14 +152,23 @@ func DeleteUser(ctx *gin.Context) {
 		return
 	}
 
-	_, err = repositories.GetUserByUsername(database.DbConnection, loginInfo)
+	user, err := repositories.GetUserByUsername(database.DbConnection, loginInfo)
 	if err != nil {
 		helpers.APIResponse(ctx, http.StatusBadRequest, "Username does not exist", nil)
 		return
 	}
 
+	// Delete all sessions related to the user
+	err = repositories.DeleteUserSessions(database.DbConnection, user.ID)
+	if err != nil {
+		fmt.Println(err)
+		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to delete user's sessions", nil)
+		return
+	}
+
 	err = repositories.DeleteUser(database.DbConnection, loginInfo)
 	if err != nil {
+		fmt.Println(err)
 		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to delete user", nil)
 		return
 	}

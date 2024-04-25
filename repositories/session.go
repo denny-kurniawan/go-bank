@@ -14,3 +14,8 @@ func InsertSession(db *sql.DB, session structs.Session) (structs.Session, error)
 
 	return session, nil
 }
+
+func DeleteUserSessions(db *sql.DB, userID uint64) error {
+	_, err := db.Exec("DELETE FROM sessions WHERE user_id = $1", userID)
+	return err
+}
