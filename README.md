@@ -1,6 +1,18 @@
 # Go Bank API
 
-This project is a simple banking API built with Go. It provides endpoints for user registration, login, password change, and user deletion.
+This project is a simple banking system implemented in Go. It uses the Gin framework for handling HTTP requests and PostgreSQL for data persistence.
+
+The system supports user registration and login, and authenticated users can perform various operations related to their bank accounts and transactions.
+
+Here are some of the main features:
+
+- User registration and login: Users can register with a username and password, and log in to their account.
+
+- Account management: Users can create new bank accounts, view details of their existing accounts, and delete accounts.
+
+- Transaction management: Users can deposit money into an account, withdraw money from an account, and transfer money between accounts.
+
+
 
 ## Getting Started
 
@@ -29,6 +41,18 @@ To run the application, use the `go run` command:
 ```console
 go run main.go
 ```
+
+## Project Struture
+
+The project structure is organized into several packages, each responsible for a specific aspect of the system:
+
+- `controllers`: Contains the HTTP handlers for the various endpoints.
+- `database`: Contains code for database connection and migrations.
+- `helpers`: Contains helper functions used across the project.
+- `middleware`: Contains middleware functions for handling authentication and cross-cutting concerns.
+- `repositories`: Contains code for interacting with the database.
+- `routers`: Contains the routing configuration.
+- `structs`: Contains the data structures used in the project.
 
 ## API Endpoints
 
