@@ -26,10 +26,19 @@ func StartServer() *gin.Engine {
 			userAccounts.GET("/", controllers.GetAccountsByUserID)
 			userAccounts.DELETE("/", controllers.DeleteAccountsByUserID)
 
-			userAccounts.GET("/:accountNo", controllers.GetAccountByAccountNo)
-			userAccounts.DELETE("/:accountNo", controllers.DeleteAccountByAccountNo)
+			userAccount := userAccounts.Group("/:accountNo")
+			{
+				userAccount.GET("/", controllers.GetAccountDetails)
+				userAccount.DELETE("/", controllers.DeleteAccountByAccountNo)
+			}
 		}
+	}
 
+	transactions := router.Group("/transactions")
+	{
+		transactions.POST("/deposit", controllers.Deposit)
+		transactions.POST("/withdraw", controllers.Withdraw)
+		transactions.POST("/transfer", controllers.Transfer)
 	}
 
 	return router

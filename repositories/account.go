@@ -27,12 +27,34 @@ func GetAccountsByUserID(db *sql.DB, userID string) (accounts []structs.Account,
 	return accounts, nil
 }
 
-func GetAccountByAccountNo(db *sql.DB, account structs.Account) (structs.Account, error) {
-	sql := "SELECT * FROM accounts WHERE account_number=$1 AND user_id=$2"
+func GetAccountDetails(db *sql.DB, account structs.AccountDetails) (structs.AccountDetails, error) {
+	sql1 := "SELECT * FROM accounts WHERE account_number=$1"
 
-	err := db.QueryRow(sql, account.AccountNo, account.UserID).Scan(&account.ID, &account.UserID, &account.AccountNo, &account.Balance, &account.CreatedAt, &account.UpdatedAt)
+	err := db.QueryRow(sql1, account.AccountNo).Scan(&account.ID, &account.UserID, &account.AccountNo, &account.Balance, &account.CreatedAt, &account.UpdatedAt)
 
-	return account, err
+	if err != nil {
+		return account, err
+	}
+
+	sql2 := `SELECT transaction_id, transaction_type, amount, description, created_at FROM transactions WHERE account_number=$1 ORDER BY created_at DESC`
+
+	rows, err := db.Query(sql2, account.AccountNo)
+	if err != nil {
+		return account, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var transaction structs.AccountTransaction
+		err := rows.Scan(&transaction.ID, &transaction.TransactionType, &transaction.Amount, &transaction.Description, &transaction.CreatedAt)
+		if err != nil {
+			return account, err
+		}
+
+		account.Transactions = append(account.Transactions, transaction)
+	}
+
+	return account, nil
 }
 
 func InsertAccount(db *sql.DB, account structs.Account) (structs.Account, error) {
@@ -43,7 +65,15 @@ func InsertAccount(db *sql.DB, account structs.Account) (structs.Account, error)
 	return account, err
 }
 
-func UpdateAccountBalance(db *sql.DB, account structs.Account) error {
+func GetAccountBalance(db *sql.DB, account structs.AccountBalance) (structs.AccountBalance, error) {
+	sql := "SELECT account_number, balance FROM accounts WHERE account_number=$1"
+
+	err := db.QueryRow(sql, account.AccountNo).Scan(&account.AccountNo, &account.Balance)
+
+	return account, err
+}
+
+func UpdateAccountBalance(db *sql.DB, account structs.AccountBalance) error {
 	sql := "UPDATE accounts SET balance=$1, updated_at=NOW() WHERE account_number=$2"
 
 	_, err := db.Exec(sql, account.Balance, account.AccountNo)

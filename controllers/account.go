@@ -26,8 +26,8 @@ func GetAccountsByUserID(ctx *gin.Context) {
 	helpers.APIResponse(ctx, http.StatusOK, "Accounts retrieved successfully", accounts)
 }
 
-func GetAccountByAccountNo(ctx *gin.Context) {
-	var account structs.Account
+func GetAccountDetails(ctx *gin.Context) {
+	var account structs.AccountDetails
 
 	accountNo := ctx.Param("accountNo")
 	account.AccountNo = accountNo
@@ -40,7 +40,7 @@ func GetAccountByAccountNo(ctx *gin.Context) {
 	}
 	account.UserID = parsedUserID
 
-	account, err = repositories.GetAccountByAccountNo(database.DbConnection, account)
+	account, err = repositories.GetAccountDetails(database.DbConnection, account)
 	if err != nil {
 		fmt.Println(err)
 		helpers.APIResponse(ctx, http.StatusBadRequest, "Failed to get account", nil)
