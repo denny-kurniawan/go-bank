@@ -37,6 +37,7 @@ func Deposit(ctx *gin.Context) {
 	transaction.AccountNo = transactionInfo.AccountNo
 	transaction.TransactionType = "deposit"
 	transaction.Amount = transactionInfo.Amount
+	transaction.Description = transactionInfo.Description
 
 	transaction, err = repositories.InsertTransaction(database.DbConnection, transaction)
 	if err != nil {
@@ -92,6 +93,7 @@ func Withdraw(ctx *gin.Context) {
 	transaction.AccountNo = transactionInfo.AccountNo
 	transaction.TransactionType = "withdraw"
 	transaction.Amount = transactionInfo.Amount
+	transaction.Description = transactionInfo.Description
 
 	transaction, err = repositories.InsertTransaction(database.DbConnection, transaction)
 	if err != nil {
