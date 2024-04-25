@@ -43,7 +43,6 @@ func Register(ctx *gin.Context) {
 func Login(ctx *gin.Context) {
 	var loginInfo structs.LoginInfo
 	var user structs.User
-	var loginResponse structs.LoginResponse
 
 	err := ctx.ShouldBindJSON(&loginInfo)
 	if err != nil {
@@ -63,10 +62,33 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
+	var session structs.Session
+
+	// Generate a new session ID
+	session.ID = helpers.GenerateUUID()
+	session.UserID = user.ID
+
 	// Generate JWT token
-	// loginResponse.Token, err = helpers.GenerateJWT(user.ID)
+	token, err := helpers.GenerateJWT(user.ID)
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusInternalServerError, "Error generating token", nil)
+		return
+	}
+	session.Token = token
+
+	session, err = repositories.InsertSession(database.DbConnection, session)
+
+	if err != nil {
+		helpers.APIResponse(ctx, http.StatusInternalServerError, "Failed to create session", nil)
+		return
+	}
+
+	var loginResponse structs.LoginResponse
+
 	loginResponse.ID = user.ID
 	loginResponse.Username = user.Username
+	loginResponse.Token = session.Token
+	loginResponse.ExpiresAt = session.ExpiresAt
 
 	helpers.APIResponse(ctx, http.StatusOK, "Login successful", loginResponse)
 }
