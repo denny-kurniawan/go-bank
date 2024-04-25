@@ -3,7 +3,7 @@
 
 CREATE TABLE transactions (
   transaction_id SERIAL PRIMARY KEY,
-  account_id INTEGER REFERENCES Accounts(account_id) NOT NULL,
+  account_id INTEGER REFERENCES accounts(account_id) NOT NULL,
   transaction_type VARCHAR(20) NOT NULL,  -- Deposit, Withdrawal, Transfer
   amount DECIMAL(10,2) NOT NULL,
   description VARCHAR(255),

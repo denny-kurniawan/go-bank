@@ -21,7 +21,9 @@ type LoginInfo struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	ID       uint64 `json:"id"`
+	Username string `json:"username"`
+	Token    string `json:"token"`
 }
 
 type ChangePasswordInfo struct {

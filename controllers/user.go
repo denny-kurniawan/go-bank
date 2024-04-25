@@ -64,6 +64,9 @@ func Login(ctx *gin.Context) {
 	}
 
 	// Generate JWT token
+	// loginResponse.Token, err = helpers.GenerateJWT(user.ID)
+	loginResponse.ID = user.ID
+	loginResponse.Username = user.Username
 
 	helpers.APIResponse(ctx, http.StatusOK, "Login successful", loginResponse)
 }
